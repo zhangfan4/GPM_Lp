@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 13 14:49:51 2020
-
-@author: Xiangyu Yang
-"""
-
 import numpy as np
 import sys
 from numpy import linalg as LA
