@@ -80,13 +80,11 @@ def GPM(A, x, y, alpha, p, radius):
               iter_L1: # the projection onto the Weighed L1-norm ball
     """
 
-    eta = 0.8               # the ratio of step-size in Frank-Wolfe method
-    bisection_flag = 0      # the flag of whether bisection method succeeds
     tol = 1e-6              # tolerance of numerical precision
     iter = 0                # the number of total iteration
     iter_L1 = 0           # the number of the call of projected gradient descent method
     iter_Lp = 0             # the number of the call of Frank-Wolfe method
-    stopping_tol = 1e-6     # the tolerance of stopping criteria
+    stopping_tol = 1e-8     # the tolerance of stopping criteria
 
     while True:
         iter += 1
@@ -149,19 +147,24 @@ def GPM(A, x, y, alpha, p, radius):
                 break
 
             z = x - alpha * grad
-            if LA.norm(z, p) ** p > radius:
+            if (LA.norm(z, p) ** p - radius) <= tol:
                 ''' Projecting z onto the Lp norm ball '''
+                # print('inner-inner')
+                x = z
+
+            elif LA.norm(z, p) ** p > radius:
                 # print('inner-outer')
+                # print('11'*30)
+                # print(LA.norm(z, p) ** p - radius)
+                # print('11' * 30)
                 dim = len(z)
                 x_ini = x  # the initial points for the algorithm
 
                 # %% Generate epsilon according to x.
-                epsilon = 0.9 * (1./dim * (radius - LA.norm(x, p) ** p)) ** (1./p) * np.ones(dim)  # ensure that the point is feasible.
+                epsilon = 0.9 * (1. / dim * (radius - LA.norm(x, p) ** p)) ** (1. / p) * np.ones(
+                    dim)  # ensure that the point is feasible.
+                # print(epsilon)
                 x = Lp_proj.WeightLpBallProjection(dim, x_ini, z, p, radius, epsilon)
-
-            else:
-                # print('inner-inner')
-                x = z
 
             # print('{:5d}    {}:   Obj = {:3.3f}   Res = {:4.3e}   #nonzero = {}'.format(iter, 'Interior case',
             #                                                                             loss(A, x, y), norm_grad,
