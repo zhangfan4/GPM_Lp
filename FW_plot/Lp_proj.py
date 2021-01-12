@@ -168,11 +168,14 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
         while True:
             count = count + 1
             # Step 3 of algorithm1: Reweighing: Compute the weights
-            weights = p * (np.abs(x) + epsilon) ** (p-1)
+            # Typo in original code!
+            if count == 1:
+                x = x * signum
+            weights = p * (x + epsilon) ** (p-1)
             weights_seq += [weights]
             
             # Step 4 of algorithm1: Subproblem solving
-            gamma_k = radius - LA.norm(np.abs(x)+epsilon,p) ** p + np.dot(weights, np.abs(x))
+            gamma_k = radius - LA.norm(x+epsilon,p) ** p + np.dot(weights, x)  # Typo in original code 'np.abs(x)'!
             # print(radius - LA.norm(np.abs(x)+epsilon,p) ** p)
             # print(gamma_k)
             # print('-'*20)
@@ -184,8 +187,8 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                 break
                 
             #%% Calling algorithm2: weighted l1 ball projection
-            x_opt, lam = WeightSimplexProjection(n, y, signum, gamma_k, weights)  # x_opt: R^n
-            # x_opt, lam = simplex_RT.bisection(signum, lam, y, gamma_k, weights)  # x_opt: R^n
+            # x_opt, lam = WeightSimplexProjection(n, y, signum, gamma_k, weights)  # x_opt: R^n
+            x_opt, lam = simplex_RT.bisection(signum, lam, y, gamma_k, weights)  # x_opt: R^n
             # print(lam)
 
             num_nonzeros = np.count_nonzero(x_opt)
@@ -196,16 +199,18 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
             obj_k = loss(x_tem, y)
             
             #%% whether the update condition is triggerd for epsilon
-            
+
             local_reduction = x_opt - x    # in the limit, it should be zero
+            local_reduction_norm = LA.norm(local_reduction, ord=2)
 
             # Adapted by our current paper.
-            condition_left = LA.norm(local_reduction, ord=2) * LA.norm(weights, ord=2) ** Tau
+            sign_weight = np.sign(local_reduction) * weights   # Typo in original code!
+            condition_left = local_reduction_norm * LA.norm(sign_weight, ord=2) ** Tau
             condition_right = M
             
 
             #%% Determine whether to trigger the update condition            
-            error_appro =  np.abs(LA.norm(x_opt, p)**p - radius)
+            error_appro = np.abs(LA.norm(x_opt, p)**p - radius)
             epsilon_seq += [epsilon]
             
             if condition_left <= condition_right:
@@ -224,41 +229,43 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                    
             # Determine the inactive set whether remains unchanged
             #%% Determine whether this collection is empty
-            # if act_ind_outer: # Nonempty inactive set I. Our lemma shows the I(x^k) is nonempty
+            if act_ind_outer: # Nonempty inactive set I. Our lemma shows the I(x^k) is nonempty
 
             # Begin to calculate the residual 
-            #     y_act_ind_outer = bar_y[act_ind_outer]
-            #     x_act_ind_outer = x_opt[act_ind_outer] #(k+1)th iterate
-            #     weights_ind_outer = weights[act_ind_outer]
+                y_act_ind_outer = bar_y[act_ind_outer]
+                x_act_ind_outer = x_opt[act_ind_outer] #(k+1)th iterate
+                weights_ind_outer = weights[act_ind_outer]
             
-            ## Check this formula
-            #%% Compute multiplier lambda and tow residuals
-                # lambda_opt = np.divide(np.sum(y_act_ind_outer - x_act_ind_outer), np.sum(weights_ind_outer))
-            lambda_opt_seq += [lam]
+                ## Check this formula
+                #%% Compute multiplier lambda and tow residuals
+                lambda_opt = np.divide(np.sum(y_act_ind_outer - x_act_ind_outer), np.sum(weights_ind_outer))
+                lambda_opt_seq += [lambda_opt]
 
-            residual_alpha = (1/n) * np.sum(np.abs((bar_y - x_opt) * x_opt - p * lam * x_opt ** p))
-            residual_beta = (1/n) * np.abs(LA.norm(x_opt, p) ** p - radius)
+                # Typo in original code! (no 1/n in paper)
+                residual_alpha = (1/n) * np.sum(np.abs((bar_y - x_opt) * x_opt - p * lambda_opt * x_opt ** p))
+                residual_beta = (1/n) * error_appro
 
-            res_alpha += [residual_alpha]
-            res_beta += [residual_beta]
+                res_alpha += [residual_alpha]
+                res_beta += [residual_beta]
+                res_alpha0 = res_alpha[0]
+                res_beta0 = res_beta[0]
 
+                # Step 6 of our algorithm: go to the (k+1)-th iterate.
+                x = x_opt          # (k+1)-th solution
+                res_iterate += [x]  # store each iterate
 
-            #%% Step 6 of our algorithm: go to the (k+1)-th iterate.
-            x = x_opt          # (k+1)-th solution
-            res_iterate += [x]  # store each iterate
-
-            print('{0:3d}: Obj = {1:3.3f}, alpha = {2:4.3e}, beta = {3:4.3e}, eps = {4:4.3e}, dual = {5:3.3f}, #nonzeros = {6:2d}'.format(count, obj_k, residual_alpha, residual_beta, eps_norm, lam, num_nonzeros), end=' ')
-            print()
-            #%% Check the stopping criteria
-            if np.maximum(residual_alpha, residual_beta) <= tol * np.maximum(np.maximum(res_alpha[0], res_beta[0]), 1) or count >= Iter_max:
-                if count >= Iter_max:
-                    Flag_gamma_pos = 'Fail'
-                    print("The solution is not so good")
-                    break
-                else:
-                    Flag_gamma_pos = 'Success'
-                    x_final = signum * x_opt #element-wise product
-                    break
+                print('{0:3d}: Obj = {1:4.3e}, alpha = {2:4.3e}, beta = {3:4.3e}, eps = {4:4.3e}, dual = {5:4.3e}, #nonzeros = {6:2d}, x-x_p = {7:4.3e}'.format(count, obj_k, residual_alpha, residual_beta, eps_norm, lam, num_nonzeros, local_reduction_norm), end=' ')
+                print()
+                # Check the stopping criteria
+                if np.maximum(residual_alpha, residual_beta) <= tol * np.max([res_alpha[0], res_beta[0], 1]) or count >= Iter_max:
+                    if count >= Iter_max:
+                        Flag_gamma_pos = 'Fail'
+                        print("The solution is not so good")
+                        break
+                    else:
+                        Flag_gamma_pos = 'Success'
+                        x_final = signum * x_opt  # element-wise product
+                        break
     return x_final
 
 #%% Call Newton's method to refine the final solutions
