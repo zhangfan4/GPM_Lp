@@ -19,18 +19,21 @@ def hyperplane(y_proj_act, weights_act, gamma_k):
     s.t. y_proj_act^T weights_act = r,
     :parameter gamma_k: the radius of L1-ball
     :parameter y_proj_act: the point to be projected
-    :returns: x_sub: the projection onto the hyperplane 
-              scalar3: x_sub = y_proj_act - scalar3 * weights_act
+    :returns: 
+            coef: the coeffficient of y_proj_act
+            x_sub: the projection onto the hyperplane 
+                x_sub = y_proj_act - coef * weights_act
+            
     """
     scalar1 = np.dot(weights_act, y_proj_act) - gamma_k
     scalar2 = sum(weights_act ** 2)
     try:
-        scalar3 = np.divide(scalar1, scalar2)
+        coef = scalar1 / scalar2
     except ZeroDivisionError:
         print("Error! - derivation zero for scalar2 =", scalar2)
         sys.exit(1)
-    x_sub = y_proj_act - scalar3 * weights_act
-    return x_sub, scalar3
+    x_sub = y_proj_act - coef * weights_act
+    return x_sub, coef
 
 
 def WeightedL1Projection(y, weights, radius):
@@ -57,8 +60,9 @@ def WeightedL1Projection(y, weights, radius):
         y_proj[act_ind] = y_proj_act
 
         # update the active set
-        act_ind = y_proj > 0
+        act_ind = (y_proj > 0)
 
+        # if x_sol_hyper(i) * y_proj_act(i) <0, we need to project again
         inact_ind_cardinality = sum(x_sol_hyper < 0)
         if inact_ind_cardinality == 0:
             x_opt = y_proj * y_sign
@@ -108,13 +112,17 @@ def GPM(A, x, y, alpha, p, radius):
             else:
                 ''' Projecting z onto the weighed L1 norm ball '''
                 # print('outer-inner')
-                # find the active set and calculate the weight
+
+                # keep the same active set between x and z
                 act_ind = np.where(abs(x) > tol)[0]
                 for i in range(len(z)):
                     if i not in act_ind:
                         z[i] = 0
+
+                # weight vector
                 w = np.zeros(len(x))
                 w[act_ind] = p * abs(x[act_ind]) ** (p - 1)
+                # radius
                 radius_L1 = w[act_ind].dot(abs(x[act_ind]))
                 # weighted L1 projection
                 x = WeightedL1Projection(z, w, radius_L1)
@@ -140,7 +148,8 @@ def GPM(A, x, y, alpha, p, radius):
             Case II: x_k is inside the Lp-ball
             """
             iter_Lp += 1
-            norm_grad = alpha ** 2 * LA.norm(grad) ** 2
+            # norm_grad = alpha ** 2 * LA.norm(grad) ** 2
+            norm_grad = LA.norm(grad, 2)
 
             # Termination criterion \|\nabla f(x_k)\|_2 <= eps_2
             if norm_grad < stopping_tol:

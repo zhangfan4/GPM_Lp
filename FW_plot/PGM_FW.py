@@ -36,6 +36,8 @@ def power_iteration(A, num_simulations):
         b_k = b_k1 / b_k1_norm
 
     return b_k
+
+
 # def loss(A, x, y):
 #     """
 #     return 0.5 * ||Ax - y||_2^2
@@ -214,14 +216,15 @@ if __name__ == '__main__':
     # Generate simulated data
     np.random.seed(1)
     random.seed(1)
+    # m, n is the size of the measurement matrix A
     n = 32
     m = np.int32(np.linspace(54, 4 * (n - 4), 15))
     s = np.int32(np.linspace(2, n - 2, 15))  # number of zero components
 
-    p = 0.5
+    p = 0.5 # value of p-norm
     average_num = 10
 
-    len_s = len(s)
+    len_s = len(s) 
     len_m = len(m)
     list_res = np.zeros((len_s, len_m, average_num))
     list_error = np.ones((len_s, len_m, average_num))
@@ -231,6 +234,7 @@ if __name__ == '__main__':
         for j in range(len_m):
 
             for k in range(average_num):
+                # data generation
 
                 # x_opt = np.random.randn(n)
                 # # print(x_opt)
@@ -278,6 +282,7 @@ if __name__ == '__main__':
                 # print(x)
                 # print('---------')
                 # print(x_opt)
+                
                 set_x_opt = set(np.nonzero(x_opt)[0])
                 set_x = set(np.nonzero(x)[0])
                 if set_x & set_x_opt == set_x_opt:
