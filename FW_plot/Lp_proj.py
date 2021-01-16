@@ -233,7 +233,6 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                 lambda_opt = np.divide(np.sum(y_act_ind_outer - x_act_ind_outer), np.sum(weights_ind_outer))
                 lambda_opt_seq += [lambda_opt]
 
-                # Typo in original code! (no 1/n in paper)
                 residual_alpha = (1/n) * np.sum(np.abs((bar_y - x_opt) * x_opt - p * lambda_opt * x_opt ** p))
                 residual_beta = (1/n) * error_appro
 
