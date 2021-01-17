@@ -162,7 +162,7 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
             # Step 3 of algorithm1: Reweighing: Compute the weights
             # Typo in original code!
             if count == 1:
-                x = x * signum
+                x = abs(x)
             weights = p * (x + epsilon) ** (p-1)
             weights_seq += [weights]
             
