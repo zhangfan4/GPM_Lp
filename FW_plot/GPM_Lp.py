@@ -3,6 +3,7 @@ import sys
 from numpy import linalg as LA
 import Lp_proj
 import simplex_RT
+import inexact_proj
 
 
 def loss(A, x, y):
@@ -157,23 +158,24 @@ def GPM(A, x, y, alpha, p, radius):
 
             z = x - alpha * grad
             if (LA.norm(z, p) ** p - radius) <= tol:
-                ''' Projecting z onto the Lp norm ball '''
+                
                 # print('inner-inner')
                 x = z
 
             elif LA.norm(z, p) ** p > radius:
+                ''' Projecting z onto the Lp norm ball '''
                 # print('inner-outer')
-                # print('11'*30)
-                # print(LA.norm(z, p) ** p - radius)
-                # print('11' * 30)
-                dim = len(z)
-                x_ini = x  # the initial points for the algorithm
+
+#                 dim = len(z)
+#                 x_ini = x  # the initial points for the algorithm
 
                 # %% Generate epsilon according to x.
-                epsilon = 0.9 * (1. / dim * (radius - LA.norm(x, p) ** p)) ** (1. / p) * np.ones(
-                    dim)  # ensure that the point is feasible.
-                # print(epsilon)
-                x = Lp_proj.WeightLpBallProjection(dim, x_ini, z, p, radius, epsilon)
+#                 epsilon = 0.9 * (1. / dim * (radius - LA.norm(x, p) ** p)) ** (1. / p) * np.ones(
+#                     dim)  # ensure that the point is feasible.
+#                 x = Lp_proj.WeightLpBallProjection(dim, x_ini, z, p, radius, epsilon)
+                
+                beta = inexact_proj.bisection(x, d, radius, p, tol)  # line search for the stepsize beta satisfying ||x+beta*d||_p^p = radius
+                x += beta * d
 
             # print('{:5d}    {}:   Obj = {:3.3f}   Res = {:4.3e}   #nonzero = {}'.format(iter, 'Interior case',
             #                                                                             loss(A, x, y), norm_grad,
