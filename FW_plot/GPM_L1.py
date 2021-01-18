@@ -34,7 +34,7 @@ def gradient(x, A, b):
 
 def hyperplane(x, tau):
     """
-    Projection onto the hyperplane.
+    Projection onto the surface of l1 ball .
     :param x: being projected point
     :param tau: radius of L1 ball
     :return: the projection z

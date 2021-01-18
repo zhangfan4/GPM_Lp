@@ -1,3 +1,8 @@
+"""
+This file is used to generate the data for experiments.
+"""
+
+
 import numpy as np
 import random
 import scipy.sparse
