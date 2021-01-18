@@ -10,7 +10,11 @@ import sys
 from numpy import linalg as LA
 import Lp_proj
 import simplex_RT
+<<<<<<< HEAD
 from auxiliary_projection import projection_onto_hyperplane, projection_onto_weighted_l1_norm_ball
+=======
+import inexact_proj
+>>>>>>> f24af5513d4e374ca8984e0694265f8a0aaae32a
 
 
 def loss(A, x, y):
@@ -106,6 +110,7 @@ def GPM(A, x, y, step_size, p, radius):
             if LA.norm(grad, 2) < stopping_tol:
                 break
 
+<<<<<<< HEAD
             z = x - step_size * grad
 
             if LA.norm(z, p) ** p <= radius + precision:    # CASE II.1: z is feasible, that is, z is in the lp ball
@@ -120,6 +125,28 @@ def GPM(A, x, y, step_size, p, radius):
                 # see 2101.01350.pdf, section 5.1 for details
                 epsilon = 0.9 * (1. / dim * (radius - LA.norm(x, p) ** p)) ** (1. / p) * np.ones(dim)  
                 # ensure that the point is feasible.
+=======
+            z = x - alpha * grad
+            if (LA.norm(z, p) ** p - radius) <= tol:
+                
+                # print('inner-inner')
+                x = z
+
+            elif LA.norm(z, p) ** p > radius:
+                ''' Projecting z onto the Lp norm ball '''
+                # print('inner-outer')
+
+#                 dim = len(z)
+#                 x_ini = x  # the initial points for the algorithm
+
+                # %% Generate epsilon according to x.
+#                 epsilon = 0.9 * (1. / dim * (radius - LA.norm(x, p) ** p)) ** (1. / p) * np.ones(
+#                     dim)  # ensure that the point is feasible.
+#                 x = Lp_proj.WeightLpBallProjection(dim, x_ini, z, p, radius, epsilon)
+                
+                beta = inexact_proj.bisection(x, d, radius, p, tol)  # line search for the stepsize beta satisfying ||x+beta*d||_p^p = radius
+                x += beta * d
+>>>>>>> f24af5513d4e374ca8984e0694265f8a0aaae32a
 
                 x = Lp_proj.WeightLpBallProjection(dim, x_init, z, p, radius, epsilon)
                 

@@ -91,6 +91,37 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
         print('The current point falls into the Lp ball. Please choose another new point!')
         return None
     
+<<<<<<< HEAD
+=======
+    else: 
+        Flag_gamma_pos = 'Success'
+        lam = 0  # initial value of lambda
+        while True:
+            count = count + 1
+            # Step 3 of algorithm1: Reweighing: Compute the weights
+            # Typo in original code!
+            if count == 1:
+                x = abs(x)
+            weights = p * (x + epsilon) ** (p-1)
+            weights_seq += [weights]
+            
+            # Step 4 of algorithm1: Subproblem solving
+            gamma_k = radius - LA.norm(x+epsilon,p) ** p + np.dot(weights, x)  # Typo in original code 'np.abs(x)'!
+            # print(radius - LA.norm(np.abs(x)+epsilon,p) ** p)
+            # print(gamma_k)
+            # print('-'*20)
+            gamma_k_list += [gamma_k]
+            
+            if gamma_k <= 0:
+                Flag_gamma_pos = 'Fail'
+                print('The current Gamma is not positive!!!')
+                break
+                
+            #%% Calling algorithm2: weighted l1 ball projection
+            # x_opt, lam = WeightSimplexProjection(n, y, signum, gamma_k, weights)  # x_opt: R^n
+            x_opt, lam = simplex_RT.bisection(signum, lam, y, gamma_k, weights)  # x_opt: R^n
+            # print(lam)
+>>>>>>> f24af5513d4e374ca8984e0694265f8a0aaae32a
 
     Flag_gamma_pos = 'Success'
 

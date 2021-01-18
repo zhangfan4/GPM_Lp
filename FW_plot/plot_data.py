@@ -15,21 +15,22 @@ import scipy.sparse
 from scipy.stats import rv_continuous
 
 
-n = 128
-m = np.int32(np.linspace(32, 4 * (n - 32), 15))
-s = np.int32(np.linspace(8, n - 8, 15))
-average_num = 5.
+n = 32
+point = 8
+m = np.int32(np.linspace(int(n / point), 4 * n, point))
+s = np.int32(np.linspace(2, n - 2, point))  # number of zero components
+average_num = 5
 data = np.load('./results/list_res_100.npy')
 # data = np.delete(data, 24, 1)
 data = np.sum(data, 2) / average_num
 print(data)
-res = np.zeros((15, 15))
+res = np.zeros((point, point))
 
 ratio1 = s / n
 ratio2 = m / n
 
-for i in range(15):
-    res[i, :] = data[:, 14 - i].T
+for i in range(point):
+    res[i, :] = data[:, point-1 - i].T
     res[i, :] = res[i, ::-1]
 
 print(res)
