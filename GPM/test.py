@@ -79,5 +79,6 @@ def main(Alg_flag):
     # print('Solution:', x)
 
 
-main(1)  # for testing FW
+# main(1)  # for testing FW
 main(0)  # for testing GPM
+
