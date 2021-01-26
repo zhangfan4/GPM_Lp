@@ -3,6 +3,7 @@ import sys
 from numpy import linalg as LA
 import Lp_proj
 import simplex_RT
+import inexact_proj
 
 
 def loss(A, x, y):
@@ -103,7 +104,7 @@ def GPM(A, x, y, alpha, p, radius):
             z = x - alpha * grad
 
             # Check z feasible or infeasible (necessary?)
-            if abs(LA.norm(z, p) ** p - radius) <= tol:  # Will this situation happen?
+            if LA.norm(z, p) ** p - radius <= tol:  # Will this situation happen?
                 print('outer-outer')
                 x = z
 
@@ -120,6 +121,7 @@ def GPM(A, x, y, alpha, p, radius):
                 radius_L1 = w[act_ind].dot(abs(x[act_ind]))
                 # weighted L1 projection
                 x = WeightedL1Projection(z, w, radius_L1)
+                # print('where am I?', LA.norm(x, p) ** p - radius)
 
                 # # TODO: zero element encountered, Insight: select inactive indices
                 # signum = np.ones(len(act_ind))
@@ -148,8 +150,13 @@ def GPM(A, x, y, alpha, p, radius):
             if norm_grad < stopping_tol:
                 break
 
-            z = x - alpha * grad
-            if LA.norm(z, p) ** p > radius:
+            d = - alpha * grad
+            z = x + d
+
+            if (LA.norm(z, p) ** p - radius) <= tol:
+                print('inner-inner')
+                x = z
+            elif LA.norm(z, p) ** p > radius:
                 ''' Projecting z onto the Lp norm ball '''
                 print('inner-outer')
                 dim = len(z)
@@ -158,6 +165,9 @@ def GPM(A, x, y, alpha, p, radius):
                 # %% Generate epsilon according to x.
                 epsilon = 0.9 * (1./dim * (radius - LA.norm(x, p) ** p)) ** (1./p) * np.ones(dim)  # ensure that the point is feasible.
                 x = Lp_proj.WeightLpBallProjection(dim, x_ini, z, p, radius, epsilon)
+
+                # beta = inexact_proj.bisection(x, d, radius, p, tol)  # line search for the stepsize beta satisfying ||x+beta*d||_p^p = radius
+                # x += beta * d
 
             else:
                 print('inner-inner')
