@@ -7,7 +7,7 @@ def fun_eval(lam, w, y, gamma):
         Function evaluation
         f(lam) = sum_i w_i max(y_i - lam w_i, 0) - gamma
     """
-    x_temp = y - lam * w 
+    x_temp = y - lam * w
     f_val = np.dot(w.T, np.maximum(x_temp, 0)) - gamma
     return f_val
 

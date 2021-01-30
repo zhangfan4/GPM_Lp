@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 13 14:49:51 2020
+
+@author: Xiangyu Yang
+"""
+
 import numpy as np
 import sys
 from numpy import linalg as LA
@@ -84,19 +92,16 @@ def WeightSimplexProjection(n, y, signum, gamma_k, weights):
     
     """
     y_proj = signum * y # elementwise multiplication of two ndarray : the datapoint to be projected
-    # elements of y_proj now are non-negative
-
     act_ind = list(range(n)) # record active index
-    while True: # Because this algorithm terminates in finite steps
+    while True: #Because this algorithm terminates in finite steps
     # calculate y_bar_act            
         y_proj_act = y_proj[act_ind]
         weights_act = weights[act_ind]
 
-        x_sol_hyper, lambd = hyperplane(y_proj_act, weights_act, gamma_k)  
-        # projection onto the hyperplane define by weights_act, gamma_k
+        x_sol_hyper, lambd = hyperplane(y_proj_act, weights_act, gamma_k)  # projection onto the hyperplane
 
-        #%% dimension reduction and now the y_bar_act is the next projection point. Projection onto the non-negative orthant.  
-        # Once the negative components are detected, then elemiate them. These components are kept as 0 during next projection. 
+        #%% dimension reduction and now the y_bar_act is the next projection point. Projection onto the non-negative orthont.  
+        #Once the non-negative components are detected, then elemiate them. These components are kept as 0 during next projection. 
         y_proj_act = np.maximum(x_sol_hyper, 0.0)
         y_proj[act_ind] = y_proj_act # back to the initial index
         
@@ -162,6 +167,8 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
         lam = 0  # initial value of lambda
         while True:
             count = count + 1
+            if count == 1:
+                x = abs(x)
             #%% Step 3 of algorithm1: Reweighting: Compute the weights 
             weights = p * (np.abs(x) + epsilon) ** (p-1)
             weights_seq += [weights]
@@ -181,8 +188,6 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                 
             #%% Calling algorithm2: weighted l1 ball projection
             # x_opt, lam = WeightSimplexProjection(n, y, signum, gamma_k, weights)  # x_opt: R^n
-            
-            ### read this part
             x_opt, lam = simplex_RT.bisection(signum, lam, y, gamma_k, weights)  # x_opt: R^n
             # print(lam)
 
@@ -198,21 +203,21 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
             local_reduction = x_opt - x    # in the limit, it should be zero
 
             # Adapted by our current paper.
-            condition_left = LA.norm(local_reduction, 2) * LA.norm(weights, 2) ** Tau
+            sign_weight = np.sign(local_reduction) * weights  # Typo in original code!
+            condition_left = LA.norm(local_reduction, ord=2) * LA.norm(sign_weight, ord=2) ** Tau
             condition_right = M
             
 
-            #%% Determine whether to trigger the update condition, Eq(13)        
+            #%% Determine whether to trigger the update condition            
             error_appro =  np.abs(LA.norm(x_opt, p)**p - radius)
             epsilon_seq += [epsilon]
             
             if condition_left <= condition_right:
-                # didn't explaine why ????
                 epsilon = np.minimum(error_appro, 1/(np.sqrt(count))) * epsilon
                 counter = counter + 1
                 # print()
                 
-            eps_norm = LA.norm(epsilon, inf)
+            eps_norm = LA.norm(epsilon,np.inf)
                         
             #%% Checking the termination conditon
             
@@ -235,8 +240,7 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                 # lambda_opt = np.divide(np.sum(y_act_ind_outer - x_act_ind_outer), np.sum(weights_ind_outer))
             lambda_opt_seq += [lam]
 
-            # define in Eq(25), Eq(39)
-            residual_alpha = (1/n) * np.sum(np.abs( (bar_y - x_opt) * x_opt - p * lam * x_opt ** p))
+            residual_alpha = (1/n) * np.sum(np.abs((bar_y - x_opt) * x_opt - p * lam * x_opt ** p))
             residual_beta = (1/n) * np.abs(LA.norm(x_opt, p) ** p - radius)
 
             res_alpha += [residual_alpha]
@@ -250,8 +254,6 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
             # print('{0:3d}: Obj = {1:3.3f}, alpha = {2:4.3e}, beta = {3:4.3e}, eps = {4:4.3e}, dual = {5:3.3f}, #nonzeros = {6:2d}'.format(count, obj_k, residual_alpha, residual_beta, eps_norm, lambda_opt, num_nonzeros), end = ' ')
             # print()
             #%% Check the stopping criteria
-
-            # Eq(39)
             if np.maximum(residual_alpha, residual_beta) <= tol * np.maximum(np.maximum(res_alpha[0], res_beta[0]), 1) or count >= Iter_max:
                 if count >= Iter_max:
                     Flag_gamma_pos = 'Fail'
@@ -260,7 +262,7 @@ def WeightLpBallProjection(n, x, y, p, radius, epsilon):
                 else:
                     Flag_gamma_pos = 'Success'
                     x_final = signum * x_opt #element-wise product
-                    exit()
+                    break
     return x_final
 
 #%% Call Newton's method to refine the final solutions
